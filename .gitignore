@@ -2,3 +2,11 @@
 *.swo
 
 *.pdf
+
+*.out
+*.aux
+*.log
+*.vrb
+
+_minted*
+
