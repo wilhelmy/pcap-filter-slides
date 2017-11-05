@@ -7,25 +7,31 @@
 \institute{RIPE NCC IPv6 Hackathon Copenhagen}
 \begin{document}
   \maketitle
-  \section{Teaching someone else's old dog new tricks}
+  \section{Teaching somebody else's old dog new tricks}
   \begin{frame}{The Problem}
     \texttt{tcpdump -i en0 "icmp6[icmptype] = icmp6-echo"}\\
     \texttt{tcpdump: IPv6 upper-layer protocol is not supported by proto[x]}
+
+    With the current version of libpcap it's not possible to match directly on ICMPv6 packet header attributes.
   \end{frame}
 
   \begin{frame}{Enter BPF}
-    Berkeley Packet Filter, a bytecode register machine that runs inside the kernel.
+    \begin{itemize}
+      \item Berkeley Packet Filter is a bytecode register machine that runs inside the kernel.
 
-    Used for performing computational operations on network packets (and nowadays other data on Linux).
+      \item Used for performing computational operations on network packets (and nowadays other data on Linux).
 
-    Linux and FreeBSD JIT-compile the bytecode to native assembly on a variety
-    of platforms for additional speed.
+      \item Linux and FreeBSD JIT-compile the bytecode to native assembly on a
+        variety of platforms for additional speed.
+
+      \item libpcap uses it internally as a compile target for its filter expression syntax.
+    \end{itemize}
   \end{frame}
 
   \begin{frame}[fragile]{Example bytecode: IPv6 packet?}
     \begin{minted}{text}
       (000) ldh      [12]
-      (001) jeq      #0x86dd          jt 2	jf 3
+      (001) jeq      #0x86dd          jt 2  jf 3
       (002) ret      #TRUE
       (003) ret      #0
     \end{minted}
@@ -46,12 +52,37 @@
     \end{itemize}
   \end{frame}
 
-  \begin{frame}{Adding ICMPv6}
+  \begin{frame}[fragile]{Adding ICMPv6}
+    \setminted{fontsize=\tiny,baselinestretch=1}
+    \begin{minted}[breaklines]{text}
+    # tcpdump 'icmp6[icmptype] = icmp6-neighboradvert'
+    tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+    listening on wlo1, link-type EN10MB (Ethernet), capture size 262144 bytes
+    19:21:23.046939 IP6 2001:470:ddf6:0:209a:219e:ffd4:5e74 > 2001:470:ddf6::1: ICMP6, neighbor advertisement, tgt is 2001:470:ddf6:0:209a:219e:ffd4:5e74 length 24
+    ^C
 
+    # tcpdump 'icmp6[icmptype] = icmp6-echoreply || icmp6[icmptype] = icmp6-echo'
+    tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+    listening on wlo1, link-type EN10MB (Ethernet), capture size 262144 bytes
+    13:50:43.424237 IP6 2001:470:ddf6:0:209a:219e:ffd4:5e74 > 2a00:1450:4013:c00::65: ICMP6, echo request, seq 1, length 64
+    13:50:43.457299 IP6 2a00:1450:4013:c00::65 > 2001:470:ddf6:0:209a:219e:ffd4:5e74: ICMP6, echo reply, seq 1, length 64
+    \end{minted}
   \end{frame}
 
-  % fehlt noch:
-  % ICMPv6
-  % Future developments
-  % Questions?
+  \begin{frame}[fragile]{Future developments}
+    There are several shortcomings in IPv6 processing inside libpcap, for
+    instance there is no generic IPv6 header processing code.
+
+    This is partly because IPv6 allows chaining of extension headers, making
+    processing in plain BPF complicated due to restrictions imposed by the
+    kernel (no loops allowed to ensure that the BPF program terminates).
+  \end{frame}
+
+  \begin{frame}[standout]
+    Demo time
+  \end{frame}
+  \begin{frame}{Thank you!}
+  Questions?
+  \end{frame}
+
 \end{document}
