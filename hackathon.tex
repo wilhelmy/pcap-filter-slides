@@ -1,5 +1,6 @@
 \documentclass{beamer}
 \usetheme{metropolis}           % Use metropolis theme
+\usepackage{minted}
 \title{ICMPv6 support for libpcap}
 \date{\today}
 \author{Matthias Hannig, Moritz Wilhelmy}
@@ -13,10 +14,27 @@
   \end{frame}
 
   \begin{frame}{Enter BPF}
+    Berkeley Packet Filter, a bytecode register machine that runs inside the kernel.
 
+    Used for performing computational operations on network packets (and nowadays other data on Linux).
+
+    Linux and FreeBSD JIT-compile the bytecode to native assembly on a variety
+    of platforms for additional speed.
   \end{frame}
 
-  \begin{frame}{Foo}
+  \begin{frame}[fragile]{Example bytecode: IPv6 packet?}
+    \begin{minted}{text}
+      (000) ldh      [12]
+      (001) jeq      #0x86dd          jt 2	jf 3
+      (002) ret      #TRUE
+      (003) ret      #0
+    \end{minted}
 
+    \begin{itemize}
+      \item Load half-word (16 bit) at offset 12 (EtherType) into the accumulator
+      \item Compare equality with magic value for IPv6 packet \texttt{0x86dd}
+      \item If true, jump to line 2, else jump to line 3
+      \item Return true if it matches, or false if it doesn't
+    \end{itemize}
   \end{frame}
 \end{document}
